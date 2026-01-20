@@ -1,0 +1,1580 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PI Data Management</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        .container {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            max-width: 900px;
+            width: 100%;
+            padding: 40px;
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+        .mode-selector {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+            background: #f5f5f5;
+            padding: 10px;
+            border-radius: 8px;
+        }
+        .mode-btn {
+            flex: 1;
+            padding: 15px;
+            border: 2px solid transparent;
+            background: white;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 500;
+            transition: all 0.3s;
+        }
+        .mode-btn:hover {
+            border-color: #667eea;
+        }
+        .mode-btn.active {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+        .form-section {
+            margin-bottom: 30px;
+            display: none;
+        }
+        .form-section.visible {
+            display: block;
+        }
+        .form-section h2 {
+            font-size: 18px;
+            color: #667eea;
+            margin-bottom: 15px;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+        }
+        .mode-content {
+            display: none;
+        }
+        .mode-content.visible {
+            display: block;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 500;
+        }
+        select, input[type="datetime-local"], input[type="text"] {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+            font-family: inherit;
+        }
+        select:focus, input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 5px rgba(102, 126, 234, 0.3);
+        }
+        .element-list {
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            max-height: 300px;
+            overflow-y: auto;
+            padding: 10px;
+            margin-bottom: 15px;
+        }
+        .element-checkbox {
+            display: flex;
+            align-items: center;
+            padding: 10px;
+            border-bottom: 1px solid #eee;
+            cursor: pointer;
+        }
+        .element-checkbox:last-child {
+            border-bottom: none;
+        }
+        .element-checkbox input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            margin-right: 10px;
+            cursor: pointer;
+        }
+        .element-checkbox label {
+            margin: 0;
+            cursor: pointer;
+            flex: 1;
+        }
+        .button-group {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-top: 30px;
+        }
+        button {
+            padding: 12px 30px;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .btn-download, .btn-insert, .btn-update-cache {
+            background: #667eea;
+            color: white;
+            flex: 1;
+            max-width: 200px;
+        }
+        .btn-download:hover, .btn-insert:hover, .btn-update-cache:hover {
+            background: #764ba2;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        .btn-download:disabled, .btn-insert:disabled, .btn-update-cache:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .btn-secondary {
+            background: #28a745;
+            color: white;
+        }
+        .btn-secondary:hover {
+            background: #218838;
+        }
+        .format-selector {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        .format-selector label {
+            display: flex;
+            align-items: center;
+            margin-bottom: 0;
+            font-weight: normal;
+            cursor: pointer;
+        }
+        .format-selector input[type="radio"] {
+            width: auto;
+            margin-right: 5px;
+            margin-bottom: 0;
+        }
+        .timestamp-section {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+        .message {
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 15px;
+            display: none;
+        }
+        .message.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+            display: block;
+        }
+        .message.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+            display: block;
+        }
+        .notification {
+            padding: 15px 15px 15px 50px;
+            border-radius: 5px;
+            margin-bottom: 15px;
+            display: none;
+            position: relative;
+            animation: slideIn 0.3s ease-out;
+        }
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        .notification::before {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 20px;
+            font-weight: bold;
+        }
+        .notification.success {
+            background: #d4edda;
+            color: #155724;
+            border: 2px solid #28a745;
+            display: block;
+        }
+        .notification.success::before {
+            content: "✓";
+            color: #28a745;
+        }
+        .notification.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 2px solid #dc3545;
+            display: block;
+        }
+        .notification.error::before {
+            content: "✕";
+            color: #dc3545;
+        }
+        .notification.warning {
+            background: #fff3cd;
+            color: #856404;
+            border: 2px solid #ffc107;
+            display: block;
+        }
+        .notification.warning::before {
+            content: "⚠";
+            color: #ffc107;
+        }
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📊 PI Data Management Tool</h1>
+        
+        <div id="message" class="message"></div>
+        
+        <!-- Mode Selection -->
+        <div class="mode-selector">
+            <button type="button" class="mode-btn active" data-mode="download">📥 Download Data</button>
+            <button type="button" class="mode-btn" data-mode="insert">➕ Insert Element/Attribute</button>
+            <button type="button" class="mode-btn" data-mode="update-attr">✏️ Update Attribute</button>
+            <button type="button" class="mode-btn" data-mode="delete">🗑️ Delete Element/Attribute</button>
+            <button type="button" class="mode-btn" data-mode="lookup">🔍 Lookup ID by Name</button>
+            <button type="button" class="mode-btn" data-mode="cache">🔄 Update Cache Files</button>
+        </div>
+        
+        <!-- Download Mode Form -->
+        <form id="downloadForm" class="mode-content visible">
+            <!-- Database Selection -->
+            <div class="form-section visible">
+                <h2>1. Select Database</h2>
+                <label for="database">Database:</label>
+                <select id="database" required>
+                    <option value="">-- Choose a database --</option>
+                </select>
+            </div>
+            
+            <!-- Element Selection -->
+            <div class="form-section visible">
+                <h2>2. Select Leaf Elements</h2>
+                <p style="color: #666; margin-bottom: 10px; font-size: 14px;">Select one or more leaf elements. Their attributes will be extracted.</p>
+                <div id="elementList" class="element-list">
+                    <p style="color: #999; padding: 20px; text-align: center;">Select a database first</p>
+                </div>
+            </div>
+            
+            <!-- Attribute Preview -->
+            <div class="form-section visible">
+                <h2>3. Attributes to Extract</h2>
+                <div id="attributePreview" style="padding: 15px; background: #f9f9f9; border-radius: 5px; max-height: 200px; overflow-y: auto;">
+                    <p style="color: #999;">Select elements to see their attributes</p>
+                </div>
+            </div>
+            
+            <!-- Time Range Selection -->
+            <div class="form-section visible">
+                <h2>4. Time Range (Optional)</h2>
+                <p style="color: #666; margin-bottom: 10px; font-size: 14px;">Leave empty to download all available data</p>
+                <div class="timestamp-section">
+                    <div>
+                        <label for="startTime">Start Time:</label>
+                        <input type="datetime-local" id="startTime">
+                    </div>
+                    <div>
+                        <label for="endTime">End Time:</label>
+                        <input type="datetime-local" id="endTime">
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Export Format -->
+            <div class="form-section visible">
+                <h2>5. Export Format</h2>
+                <div class="format-selector">
+                    <label>
+                        <input type="radio" name="format" value="csv" checked>
+                        CSV
+                    </label>
+                    <label>
+                        <input type="radio" name="format" value="parquet">
+                        Parquet
+                    </label>
+                </div>
+            </div>
+            
+            <!-- Download Button -->
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+                <p>Processing your request...</p>
+            </div>
+            
+            <div class="button-group">
+                <button type="submit" class="btn-download" id="downloadBtn">Download Data</button>
+            </div>
+        </form>
+
+        <!-- Insert Mode Form -->
+        <form id="insertForm" class="mode-content">
+            <div class="form-section visible">
+                <h2>Select Database</h2>
+                <label for="insertDatabase">Database:</label>
+                    <select id="insertDatabase">
+                    <option value="">-- Choose a database --</option>
+                </select>
+            </div>
+
+            <div class="form-section visible">
+                <h2>Choose Insert Type</h2>
+                <div class="format-selector">
+                    <label>
+                        <input type="radio" name="insertType" value="element" checked>
+                        Insert Element
+                    </label>
+                    <label>
+                        <input type="radio" name="insertType" value="attribute">
+                        Insert Attribute
+                    </label>
+                </div>
+            </div>
+
+            <!-- Element Insert Fields -->
+            <div id="elementInsertFields" class="form-section visible">
+                <h2>Element Information</h2>
+                <label for="elementName">Element Name: <span style="color: red;">*</span></label>
+                    <input type="text" id="elementName" placeholder="e.g., MONGDUONG1|MD1|Unit1">
+                
+                <label for="elementLevel">Level:</label>
+                <input type="number" id="elementLevel" value="0" min="0" placeholder="Hierarchy level">
+                
+                <label for="elementParentId">Parent Element ID (optional):</label>
+                <input type="number" id="elementParentId" placeholder="Leave empty for root element">
+            </div>
+
+            <!-- Attribute Insert Fields -->
+            <div id="attributeInsertFields" class="form-section" style="display: none;">
+                <h2>Attribute Information</h2>
+                <label for="attributeName">Attribute Name: <span style="color: red;">*</span></label>
+                <input type="text" id="attributeName" required placeholder="e.g., Temperature">
+                
+                <label for="attributeElementId">Element ID: <span style="color: red;">*</span></label>
+                    <input type="number" id="attributeElementId" placeholder="Parent element ID">
+                
+                <label for="attributeKks">KKS Code (optional):</label>
+                <input type="text" id="attributeKks" placeholder="KKS identification">
+                
+                <label for="attributeFormula">Formula (for derived attributes): <span style="color: red;">*</span></label>
+                <textarea id="attributeFormula" required placeholder="e.g., attr1 + attr2, or (attr1 * 2) - attr3&#10;Use attribute IDs like attr1, attr2, etc.&#10;Leave empty if this is a direct attribute with no formula" style="width: 100%; height: 80px; font-family: monospace;"></textarea>
+                <small style="color: #666;">Use attribute IDs (attr1, attr2, etc.) or leave empty for non-derived attributes</small>
+            </div>
+
+            <div class="loading" id="insertLoading" style="display: none;">
+                <div class="spinner"></div>
+                <p>Inserting data...</p>
+            </div>
+
+            <div class="button-group">
+                <button type="submit" class="btn-insert">Insert</button>
+            </div>
+            
+            <div id="insertNotification" class="notification"></div>
+        </form>
+
+        <!-- Update Attribute Mode -->
+        <form id="updateAttributeForm" class="mode-content">
+            <div class="form-section visible">
+                <h2>Select Database</h2>
+                <label for="updateAttrDatabase">Database:</label>
+                <select id="updateAttrDatabase">
+                    <option value="">-- Choose a database --</option>
+                </select>
+            </div>
+
+            <div class="form-section visible">
+                <h2>Select Derived Attribute to Update</h2>
+                <p style="color: #666; margin-bottom: 10px; font-size: 14px;">
+                    ℹ️ Only derived attributes (with formulas/triggers) can be updated.
+                </p>
+                <label for="updateAttrElementSelect">First, select parent element:</label>
+                <select id="updateAttrElementSelect" style="margin-bottom: 15px;">
+                    <option value="">-- Select parent element --</option>
+                </select>
+                <label for="updateAttrSelect">Then, select attribute:</label>
+                <select id="updateAttrSelect" style="margin-bottom: 15px;">
+                    <option value="">-- Select attribute to update --</option>
+                </select>
+            </div>
+
+            <div class="form-section visible">
+                <h2>Update Settings</h2>
+                <label for="updateAttrName">New Name (optional):</label>
+                <input type="text" id="updateAttrName" placeholder="Leave empty to keep current name">
+                
+                <label for="updateAttrKks">New KKS Code (optional):</label>
+                <input type="text" id="updateAttrKks" placeholder="Leave empty to keep current KKS">
+                
+                <label for="updateAttrFormula">New Formula (optional):</label>
+                <textarea id="updateAttrFormula" placeholder="e.g., $10 + $11, or ($7 * 2) - $8&#10;Use $N where N is the actual attribute_id&#10;Leave empty if not changing formula" style="width: 100%; height: 80px; font-family: monospace;"></textarea>
+                <small style="color: #666;">Use $N syntax where N is the actual attribute_id (e.g., $10, $11). Leave empty to only change name/KKS.</small>
+                
+                <div style="margin-top: 15px;" id="formulaOptions" style="display: none;">
+                    <label style="display: flex; align-items: center; cursor: pointer;">
+                        <input type="checkbox" id="updateAttrRecompute" checked style="width: auto; margin-right: 8px;">
+                        Recompute historical data with new formula
+                    </label>
+                    <small style="color: #666; margin-left: 28px; display: block; margin-top: 5px;">
+                        If unchecked, only new data will use the updated formula
+                    </small>
+                </div>
+                
+                <div style="margin-top: 10px;" id="triggerOptions" style="display: none;">
+                    <label style="display: flex; align-items: center; cursor: pointer;">
+                        <input type="checkbox" id="updateAttrTrigger" checked style="width: auto; margin-right: 8px;">
+                        Regenerate trigger for real-time computation
+                    </label>
+                    <small style="color: #666; margin-left: 28px; display: block; margin-top: 5px;">
+                        Recommended to keep this checked
+                    </small>
+                </div>
+            </div>
+
+            <div class="loading" id="updateAttrLoading" style="display: none;">
+                <div class="spinner"></div>
+                <p>Updating attribute...</p>
+            </div>
+
+            <div class="button-group">
+                <button type="submit" class="btn-update-cache">Update Attribute</button>
+            </div>
+            
+            <div id="updateAttrNotification" class="notification"></div>
+        </form>
+
+        <!-- Delete Mode Form -->
+        <form id="deleteForm" class="mode-content">
+            <div class="form-section visible">
+                <h2>Select Database</h2>
+                <label for="deleteDatabase">Database:</label>
+                <select id="deleteDatabase" name="database">
+                    <option value="">-- Choose a database --</option>
+                </select>
+            </div>
+
+            <div class="form-section visible">
+                <h2>Choose Delete Type</h2>
+                <div class="format-selector">
+                    <label>
+                        <input type="radio" name="deleteType" value="element" checked>
+                        Delete Element
+                    </label>
+                    <label>
+                        <input type="radio" name="deleteType" value="attribute">
+                        Delete Attribute
+                    </label>
+                </div>
+            </div>
+
+            <!-- Element Delete Fields -->
+            <div id="elementDeleteFields" class="form-section visible">
+                <h2>Select Element to Delete</h2>
+                <p style="color: #d9534f; font-weight: 500; margin-bottom: 15px;">
+                    ⚠️ Warning: Deleting an element will also delete all its attributes and archive data!
+                </p>
+                <label for="deleteElementSelect">Element:</label>
+                <select id="deleteElementSelect" name="elementId" style="margin-bottom: 15px;">
+                    <option value="">-- Select an element to delete --</option>
+                </select>
+                <div id="elementDeleteInfo" style="padding: 10px; background: #fff3cd; border-radius: 5px; display: none;">
+                </div>
+            </div>
+
+            <!-- Attribute Delete Fields -->
+            <div id="attributeDeleteFields" class="form-section" style="display: none;">
+                <h2>Select Attribute to Delete</h2>
+                <p style="color: #d9534f; font-weight: 500; margin-bottom: 15px;">
+                    ⚠️ Warning: Deleting an attribute will also delete all its archive data!
+                </p>
+                <label for="deleteAttributeElementSelect">First, select parent element:</label>
+                <select id="deleteAttributeElementSelect" name="parentElementId" style="margin-bottom: 15px;">
+                    <option value="">-- Select parent element --</option>
+                </select>
+                <label for="deleteAttributeSelect">Then, select attribute:</label>
+                <select id="deleteAttributeSelect" name="attributeId" style="margin-bottom: 15px;">
+                    <option value="">-- Select an attribute to delete --</option>
+                </select>
+                <div id="attributeDeleteInfo" style="padding: 10px; background: #fff3cd; border-radius: 5px; display: none;">
+                </div>
+            </div>
+
+            <div class="loading" id="deleteLoading" style="display: none;">
+                <div class="spinner"></div>
+                <p>Deleting data...</p>
+            </div>
+
+            <div class="button-group">
+                <button type="submit" class="btn-insert" style="background: #dc3545;">Delete</button>
+            </div>
+            
+            <div id="deleteNotification" class="notification"></div>
+        </form>
+
+        <!-- Lookup Mode -->
+        <form id="lookupForm" class="mode-content">
+            <div class="form-section visible">
+                <h2>Select Database</h2>
+                <label for="lookupDatabase">Database:</label>
+                <select id="lookupDatabase" required>
+                    <option value="">-- Choose a database --</option>
+                </select>
+            </div>
+
+            <div class="form-section visible">
+                <h2>Lookup Type</h2>
+                <label>
+                    <input type="radio" name="lookupType" value="element" checked> Look up Element
+                </label>
+                <label>
+                    <input type="radio" name="lookupType" value="attribute"> Look up Attribute
+                </label>
+            </div>
+
+            <!-- Element Lookup Fields -->
+            <div id="elementLookupFields" class="form-section visible">
+                <h2>Element Lookup</h2>
+                <label for="lookupElementName">Element Name (use % for pattern search):</label>
+                <input type="text" id="lookupElementName" name="elementName" placeholder="e.g., Fan1 or Fan%" required>
+                <p style="color: #666; font-size: 12px; margin-top: -10px; margin-bottom: 15px;">
+                    Tip: Use Fan% to find all elements starting with "Fan", or %Motor% to find all containing "Motor"
+                </p>
+            </div>
+
+            <!-- Attribute Lookup Fields -->
+            <div id="attributeLookupFields" class="form-section" style="display: none;">
+                <h2>Attribute Lookup</h2>
+                <label for="lookupAttributeName">Attribute Name (use % for pattern search):</label>
+                <input type="text" id="lookupAttributeName" name="attributeName" placeholder="e.g., Temperature or Temp%">
+                <p style="color: #666; font-size: 12px; margin-top: -10px; margin-bottom: 15px;">
+                    Tip: Use % for pattern search (optional)
+                </p>
+                <label for="lookupParentElement">Parent Element (optional, to narrow search):</label>
+                <select id="lookupParentElement" name="parentElementId">
+                    <option value="">-- Any element --</option>
+                </select>
+            </div>
+
+            <div class="loading" id="lookupLoading" style="display: none;">
+                <div class="spinner"></div>
+                <p>Looking up...</p>
+            </div>
+
+            <div class="button-group">
+                <button type="submit" class="btn-insert" style="background: #28a745;">Search</button>
+            </div>
+
+            <!-- Results Table -->
+            <div id="lookupResults" style="display: none; margin-top: 20px;">
+                <h3 style="color: #667eea; margin-bottom: 15px;">Search Results (<span id="resultCount">0</span> found)</h3>
+                <table style="width: 100%; border-collapse: collapse; background: white;">
+                    <thead>
+                        <tr style="background: #f5f5f5; border-bottom: 2px solid #ddd;">
+                            <th style="padding: 12px; text-align: left; font-weight: 600;">ID</th>
+                            <th style="padding: 12px; text-align: left; font-weight: 600;">Name</th>
+                            <th style="padding: 12px; text-align: left; font-weight: 600;">Details</th>
+                        </tr>
+                    </thead>
+                    <tbody id="resultsTableBody">
+                    </tbody>
+                </table>
+            </div>
+
+            <div id="lookupNotification" class="notification"></div>
+        </form>
+
+        <!-- Update Cache Mode -->
+        <form id="updateCacheForm" class="mode-content">
+            <div class="form-section visible">
+                <h2>Select Database to Update</h2>
+                <label for="updateDatabase">Database:</label>
+                <select id="updateDatabase">
+                    <option value="">-- Choose a database --</option>
+                </select>
+            </div>
+
+            <div class="form-section visible">
+                <h2>Update Information</h2>
+                <p style="color: #666; margin-bottom: 15px;">
+                    This will regenerate the JSON cache files in the data folder based on the current database content:
+                </p>
+                <ul style="color: #666; margin-left: 20px; margin-bottom: 15px;">
+                    <li>attribute_mapping_*.json - Maps PI paths to attribute IDs</li>
+                    <li>*_pi_tree_cache_selected_webids.json - Maps element paths to WebIDs</li>
+                </ul>
+                <p style="color: #d9534f; font-weight: 500;">
+                    ⚠️ This will overwrite existing cache files for the selected database.
+                </p>
+            </div>
+
+            <div id="updateCacheResult" style="display: none; padding: 15px; background: #f9f9f9; border-radius: 5px; margin-bottom: 15px;">
+            </div>
+
+            <div class="loading" id="updateLoading" style="display: none;">
+                <div class="spinner"></div>
+                <p>Updating cache files...</p>
+            </div>
+
+            <div class="button-group">
+                <button type="submit" class="btn-update-cache">Update Cache Files</button>
+            </div>
+            
+            <div id="updateNotification" class="notification"></div>
+        </form>
+    </div>
+
+    <script>
+        const downloadForm = document.getElementById('downloadForm');
+        const insertForm = document.getElementById('insertForm');
+        const updateAttributeForm = document.getElementById('updateAttributeForm');
+        const deleteForm = document.getElementById('deleteForm');
+        const lookupForm = document.getElementById('lookupForm');
+        const updateCacheForm = document.getElementById('updateCacheForm');
+        const dbSelect = document.getElementById('database');
+        const insertDbSelect = document.getElementById('insertDatabase');
+        const updateAttrDbSelect = document.getElementById('updateAttrDatabase');
+        const deleteDbSelect = document.getElementById('deleteDatabase');
+        const lookupDbSelect = document.getElementById('lookupDatabase');
+        const updateDbSelect = document.getElementById('updateDatabase');
+        const elementList = document.getElementById('elementList');
+        const attributePreview = document.getElementById('attributePreview');
+        const messageDiv = document.getElementById('message');
+        const loadingDiv = document.getElementById('loading');
+        const downloadBtn = document.getElementById('downloadBtn');
+        
+        console.log('Script loaded. Forms:', { downloadForm, insertForm, updateAttributeForm, deleteForm, lookupForm, updateCacheForm });
+        
+        let selectedElements = new Set();
+        let elementsMetadata = {};
+        let currentMode = 'download';
+
+        // Mode switching
+        document.querySelectorAll('.mode-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                currentMode = this.dataset.mode;
+                
+                // Hide all mode contents
+                document.querySelectorAll('.mode-content').forEach(c => c.classList.remove('visible'));
+                
+                // Show selected mode
+                if (currentMode === 'download') {
+                    downloadForm.classList.add('visible');
+                } else if (currentMode === 'insert') {
+                    insertForm.classList.add('visible');
+                } else if (currentMode === 'update-attr') {
+                    updateAttributeForm.classList.add('visible');
+                } else if (currentMode === 'delete') {
+                    deleteForm.classList.add('visible');
+                } else if (currentMode === 'lookup') {
+                    lookupForm.classList.add('visible');
+                } else if (currentMode === 'cache') {
+                    updateCacheForm.classList.add('visible');
+                }
+                
+                messageDiv.style.display = 'none';
+            });
+        });
+
+        // Insert type switching
+        document.querySelectorAll('input[name="insertType"]').forEach(radio => {
+            radio.addEventListener('change', function() {
+                const elementFields = document.getElementById('elementInsertFields');
+                const attributeFields = document.getElementById('attributeInsertFields');
+                
+                if (this.value === 'element') {
+                    elementFields.style.display = 'block';
+                    attributeFields.style.display = 'none';
+                } else {
+                    elementFields.style.display = 'none';
+                    attributeFields.style.display = 'block';
+                }
+            });
+        });
+
+        // Delete type switching
+        document.querySelectorAll('input[name="deleteType"]').forEach(radio => {
+            radio.addEventListener('change', function() {
+                const elementFields = document.getElementById('elementDeleteFields');
+                const attributeFields = document.getElementById('attributeDeleteFields');
+                const elementSelect = document.getElementById('deleteElementSelect');
+                const attrElementSelect = document.getElementById('deleteAttributeElementSelect');
+                const attrSelect = document.getElementById('deleteAttributeSelect');
+                
+                if (this.value === 'element') {
+                    elementFields.style.display = 'block';
+                    attributeFields.style.display = 'none';
+                    // Enable element select, disable attribute selects
+                    elementSelect.required = true;
+                    attrElementSelect.required = false;
+                    attrSelect.required = false;
+                } else {
+                    elementFields.style.display = 'none';
+                    attributeFields.style.display = 'block';
+                    // Disable element select, enable attribute selects
+                    elementSelect.required = false;
+                    attrElementSelect.required = true;
+                    attrSelect.required = true;
+                }
+            });
+        });
+
+        // Initialize delete form - element delete is default, so disable attribute fields
+        (function() {
+            const attrElementSelect = document.getElementById('deleteAttributeElementSelect');
+            const attrSelect = document.getElementById('deleteAttributeSelect');
+            attrElementSelect.required = false;
+            attrSelect.required = false;
+        })();
+
+        // Load elements for delete mode when database changes
+        deleteDbSelect.addEventListener('change', function() {
+            const database = this.value;
+            if (!database) return;
+            
+            console.log('Loading elements for delete, database:', database);
+            
+            // Load elements for both element and attribute delete
+            fetch(`/api/elements/all/${encodeURIComponent(database)}`)
+                .then(r => r.json())
+                .then(data => {
+                    console.log('Elements loaded for delete:', data);
+                    if (data.success) {
+                        const elementDeleteSelect = document.getElementById('deleteElementSelect');
+                        const attrElementSelect = document.getElementById('deleteAttributeElementSelect');
+                        
+                        // Clear existing options
+                        elementDeleteSelect.innerHTML = '<option value="">-- Select an element to delete --</option>';
+                        attrElementSelect.innerHTML = '<option value="">-- Select parent element --</option>';
+                        
+                        data.elements.forEach(elem => {
+                            const option1 = document.createElement('option');
+                            option1.value = elem.element_id;
+                            option1.textContent = `${elem.name} (ID: ${elem.element_id}, Level: ${elem.level})`;
+                            elementDeleteSelect.appendChild(option1);
+                            
+                            const option2 = document.createElement('option');
+                            option2.value = elem.element_id;
+                            option2.textContent = `${elem.name} (ID: ${elem.element_id})`;
+                            attrElementSelect.appendChild(option2);
+                        });
+                    } else {
+                        console.error('Failed to load elements:', data.error);
+                    }
+                })
+                .catch(err => {
+                    console.error('Error loading elements:', err);
+                    showMessage('Error loading elements: ' + err, 'error');
+                });
+        });
+
+        // Show element info when selected for deletion
+        document.getElementById('deleteElementSelect').addEventListener('change', function() {
+            const elementId = this.value;
+            const infoDiv = document.getElementById('elementDeleteInfo');
+            
+            if (!elementId) {
+                infoDiv.style.display = 'none';
+                return;
+            }
+            
+            const database = deleteDbSelect.value;
+            fetch(`/api/attributes/all/${encodeURIComponent(database)}?element_id=${elementId}`)
+                .then(r => r.json())
+                .then(data => {
+                    if (data.success) {
+                        infoDiv.innerHTML = `
+                            <strong>⚠️ This will delete:</strong>
+                            <ul style="margin: 10px 0 0 20px;">
+                                <li>1 element</li>
+                                <li>${data.attributes.length} attribute(s)</li>
+                                <li>All associated archive data</li>
+                            </ul>
+                        `;
+                        infoDiv.style.display = 'block';
+                    }
+                })
+                .catch(err => console.error('Error loading attributes:', err));
+        });
+
+        // Load attributes when parent element selected for attribute deletion
+        document.getElementById('deleteAttributeElementSelect').addEventListener('change', function() {
+            const elementId = this.value;
+            const attributeSelect = document.getElementById('deleteAttributeSelect');
+            attributeSelect.innerHTML = '<option value="">-- Select an attribute to delete --</option>';
+            document.getElementById('attributeDeleteInfo').style.display = 'none';
+            
+            if (!elementId) return;
+            
+            const database = deleteDbSelect.value;
+            fetch(`/api/attributes/all/${encodeURIComponent(database)}?element_id=${elementId}`)
+                .then(r => r.json())
+                .then(data => {
+                    if (data.success) {
+                        data.attributes.forEach(attr => {
+                            const option = document.createElement('option');
+                            option.value = attr.attribute_id;
+                            option.textContent = `${attr.name} (ID: ${attr.attribute_id})`;
+                            if (attr.kks) option.textContent += ` - KKS: ${attr.kks}`;
+                            attributeSelect.appendChild(option);
+                        });
+                    }
+                })
+                .catch(err => showMessage('Error loading attributes: ' + err, 'error'));
+        });
+
+        // Show attribute info when selected for deletion
+        document.getElementById('deleteAttributeSelect').addEventListener('change', function() {
+            const infoDiv = document.getElementById('attributeDeleteInfo');
+            
+            if (!this.value) {
+                infoDiv.style.display = 'none';
+                return;
+            }
+            
+            infoDiv.innerHTML = `
+                <strong>⚠️ This will delete:</strong>
+                <ul style="margin: 10px 0 0 20px;">
+                    <li>1 attribute</li>
+                    <li>All associated archive data</li>
+                </ul>
+            `;
+            infoDiv.style.display = 'block';
+        });
+
+        // Load databases on page load
+        document.addEventListener('DOMContentLoaded', loadDatabases);
+
+        function loadDatabases() {
+            fetch('/api/databases')
+                .then(r => r.json())
+                .then(data => {
+                    if (data.databases) {
+                        data.databases.forEach(db => {
+                            // Download mode
+                            const option1 = document.createElement('option');
+                            option1.value = db;
+                            option1.textContent = db;
+                            dbSelect.appendChild(option1);
+                            
+                            // Insert mode
+                            const option2 = document.createElement('option');
+                            option2.value = db;
+                            option2.textContent = db;
+                            insertDbSelect.appendChild(option2);
+                            
+                            // Delete mode
+                            const option3 = document.createElement('option');
+                            option3.value = db;
+                            option3.textContent = db;
+                            deleteDbSelect.appendChild(option3);
+                            
+                            // Update Attribute mode
+                            const option4 = document.createElement('option');
+                            option4.value = db;
+                            option4.textContent = db;
+                            updateAttrDbSelect.appendChild(option4);
+                            
+                            // Update Cache mode
+                            const option5 = document.createElement('option');
+                            option5.value = db;
+                            option5.textContent = db;
+                            updateDbSelect.appendChild(option5);
+                            
+                            // Lookup mode
+                            const option6 = document.createElement('option');
+                            option6.value = db;
+                            option6.textContent = db;
+                            lookupDbSelect.appendChild(option6);
+                        });
+                    }
+                })
+                .catch(err => showMessage('Error loading databases: ' + err, 'error'));
+        }
+
+        // Load elements when database changes (download mode)
+        dbSelect.addEventListener('change', loadElements);
+
+        function loadElements() {
+            const database = dbSelect.value;
+            if (!database) {
+                elementList.innerHTML = '<p style="color: #999; padding: 20px; text-align: center;">Select a database first</p>';
+                attributePreview.innerHTML = '<p style="color: #999;">Select elements to see their attributes</p>';
+                selectedElements.clear();
+                return;
+            }
+
+            fetch(`/api/elements/${database}`)
+                .then(r => r.json())
+                .then(data => {
+                    if (data.success) {
+                        renderElements(data.elements);
+                        selectedElements.clear();
+                        updateAttributePreview();
+                    } else {
+                        showMessage('Error: ' + data.error, 'error');
+                    }
+                })
+                .catch(err => showMessage('Error loading elements: ' + err, 'error'));
+        }
+
+        function renderElements(elements) {
+            elementList.innerHTML = '';
+            Object.entries(elements).forEach(([path, id]) => {
+                const checkbox = document.createElement('div');
+                checkbox.className = 'element-checkbox';
+                checkbox.innerHTML = `
+                    <input type="checkbox" id="elem_${id}" value="${id}" data-path="${path}">
+                    <label for="elem_${id}">${path}</label>
+                `;
+                elementList.appendChild(checkbox);
+                
+                checkbox.querySelector('input').addEventListener('change', function() {
+                    if (this.checked) {
+                        selectedElements.add(id);
+                    } else {
+                        selectedElements.delete(id);
+                    }
+                    updateAttributePreview();
+                });
+            });
+        }
+
+        function updateAttributePreview() {
+            if (selectedElements.size === 0) {
+                attributePreview.innerHTML = '<p style="color: #999;">Select elements to see their attributes</p>';
+                return;
+            }
+
+            const database = dbSelect.value;
+            const promises = Array.from(selectedElements).map(elemId =>
+                fetch(`/api/attributes/${database}/${elemId}`)
+                    .then(r => r.json())
+            );
+
+            Promise.all(promises)
+                .then(responses => {
+                    let html = '';
+                    responses.forEach((data, idx) => {
+                        if (data.success) {
+                            elementsMetadata[Array.from(selectedElements)[idx]] = data;
+                            html += `<div style="margin-bottom: 15px; padding-bottom: 15px; border-bottom: 1px solid #ddd;">`;
+                            html += `<strong>${data.element.name}</strong><br/>`;
+                            html += `<small style="color: #666;">Time range: ${data.min_timestamp || 'N/A'} to ${data.max_timestamp || 'N/A'}</small><br/>`;
+                            html += `<small style="color: #999;">Attributes: ${data.attributes.length}</small>`;
+                            if (data.attributes.length <= 5) {
+                                html += '<br/>' + data.attributes.map(a => `<code>${a.name}</code>`).join(', ');
+                            }
+                            html += `</div>`;
+                        }
+                    });
+                    attributePreview.innerHTML = html || '<p style="color: #999;">No data found</p>';
+                })
+                .catch(err => showMessage('Error loading attributes: ' + err, 'error'));
+        }
+
+        // Download form submission
+        downloadForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            if (selectedElements.size === 0) {
+                showMessage('Please select at least one element', 'error');
+                return;
+            }
+
+            downloadBtn.disabled = true;
+            loadingDiv.style.display = 'block';
+            messageDiv.style.display = 'none';
+
+            const payload = {
+                database: dbSelect.value,
+                elements: Array.from(selectedElements),
+                start_timestamp: document.getElementById('startTime').value || null,
+                end_timestamp: document.getElementById('endTime').value || null,
+                format: document.querySelector('input[name="format"]:checked').value
+            };
+
+            fetch('/api/download', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            })
+            .then(r => r.json())
+            .then(data => {
+                loadingDiv.style.display = 'none';
+                downloadBtn.disabled = false;
+
+                if (data.success) {
+                    showMessage(`Success! Downloaded ${data.rows} rows with ${data.columns.length} columns.`, 'success');
+                    window.location.href = `/download/${data.filename}`;
+                } else {
+                    showMessage('Error: ' + data.error, 'error');
+                }
+            })
+            .catch(err => {
+                loadingDiv.style.display = 'none';
+                downloadBtn.disabled = false;
+                showMessage('Error: ' + err, 'error');
+            });
+        });
+
+        // Insert form submission
+        insertForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const insertType = document.querySelector('input[name="insertType"]:checked').value;
+            const database = insertDbSelect.value;
+            
+            if (!database) {
+                showNotification('insertNotification', 'Please select a database', 'error');
+                return;
+            }
+
+            const insertLoading = document.getElementById('insertLoading');
+            insertLoading.style.display = 'block';
+            messageDiv.style.display = 'none';
+
+            let payload, endpoint;
+
+            if (insertType === 'element') {
+                const name = document.getElementById('elementName').value.trim();
+                const level = parseInt(document.getElementById('elementLevel').value);
+                const parentRaw = document.getElementById('elementParentId').value;
+                if (!name) {
+                    insertLoading.style.display = 'none';
+                    showNotification('insertNotification', 'Element name is required', 'error');
+                    return;
+                }
+                payload = {
+                    database: database,
+                    element: {
+                        name,
+                        level: Number.isNaN(level) ? 0 : level,
+                        parent_id: parentRaw ? parseInt(parentRaw) : null
+                    }
+                };
+                endpoint = '/api/element/insert';
+            } else {
+                const name = document.getElementById('attributeName').value.trim();
+                const elementIdRaw = document.getElementById('attributeElementId').value;
+                const elementId = parseInt(elementIdRaw);
+                const formula = document.getElementById('attributeFormula').value.trim();
+                if (!name) {
+                    insertLoading.style.display = 'none';
+                    showNotification('insertNotification', 'Attribute name is required', 'error');
+                    return;
+                }
+                if (!elementIdRaw || Number.isNaN(elementId)) {
+                    insertLoading.style.display = 'none';
+                    showNotification('insertNotification', 'Valid element ID is required for the attribute', 'error');
+                    return;
+                }
+                payload = {
+                    database: database,
+                    attribute: {
+                        name,
+                        element_id: elementId,
+                        kks: document.getElementById('attributeKks').value || null,
+                        formula: formula || null
+                    }
+                };
+                endpoint = '/api/attribute/insert';
+            }
+
+            // Debug logging to help trace insert issues
+            console.log('Insert submit', { insertType, database, payload, endpoint });
+
+            fetch(endpoint, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            })
+            .then(r => r.json())
+            .then(data => {
+                insertLoading.style.display = 'none';
+
+                if (data.success) {
+                    showNotification('insertNotification', data.message, 'success');
+                    insertForm.reset();
+                } else {
+                    showNotification('insertNotification', 'Error: ' + data.error, 'error');
+                }
+            })
+            .catch(err => {
+                insertLoading.style.display = 'none';
+                console.error('Insert request failed', err);
+                showNotification('insertNotification', 'Error: ' + err, 'error');
+            });
+        });
+
+        // Delete form submission
+        deleteForm.addEventListener('submit', function(e) {
+            console.log('Delete form submit triggered');
+            e.preventDefault();
+            
+            const deleteType = document.querySelector('input[name="deleteType"]:checked').value;
+            const database = deleteDbSelect.value;
+            
+            if (!database) {
+                showNotification('deleteNotification', 'Please select a database', 'error');
+                return;
+            }
+
+            let confirmMsg, payload, endpoint;
+            
+            if (deleteType === 'element') {
+                const elementId = document.getElementById('deleteElementSelect').value;
+                if (!elementId) {
+                    showNotification('deleteNotification', 'Please select an element to delete', 'error');
+                    return;
+                }
+                confirmMsg = 'Are you sure you want to delete this element? This will also delete all its attributes and archive data. This action cannot be undone!';
+                payload = { database: database, element_id: elementId };
+                endpoint = '/api/element/delete';
+            } else {
+                const attributeId = document.getElementById('deleteAttributeSelect').value;
+                if (!attributeId) {
+                    showNotification('deleteNotification', 'Please select an attribute to delete', 'error');
+                    return;
+                }
+                confirmMsg = 'Are you sure you want to delete this attribute? This will also delete all its archive data. This action cannot be undone!';
+                payload = { database: database, attribute_id: attributeId };
+                endpoint = '/api/attribute/delete';
+            }
+
+            if (!confirm(confirmMsg)) return;
+
+            const deleteLoading = document.getElementById('deleteLoading');
+            deleteLoading.style.display = 'block';
+            messageDiv.style.display = 'none';
+
+            // Convert IDs to integers
+            if (payload.element_id) {
+                payload.element_id = parseInt(payload.element_id);
+            }
+            if (payload.attribute_id) {
+                payload.attribute_id = parseInt(payload.attribute_id);
+            }
+
+            console.log('Delete submit', { deleteType, database, payload, endpoint });
+
+            fetch(endpoint, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            })
+            .then(r => r.json())
+            .then(data => {
+                deleteLoading.style.display = 'none';
+
+                if (data.success) {
+                    showNotification('deleteNotification', data.message, 'success');
+                    // Reset form and reload elements
+                    deleteForm.reset();
+                    deleteDbSelect.dispatchEvent(new Event('change'));
+                } else {
+                    showNotification('deleteNotification', 'Error: ' + data.error, 'error');
+                }
+            })
+            .catch(err => {
+                deleteLoading.style.display = 'none';
+                console.error('Delete request failed', err);
+                showNotification('deleteNotification', 'Error: ' + err, 'error');
+            });
+        });
+
+        // Update Attribute form - Load elements when database changes
+        updateAttrDbSelect.addEventListener('change', function() {
+            const database = this.value;
+            if (!database) return;
+            
+            fetch(`/api/elements/all/${encodeURIComponent(database)}`)
+                .then(r => r.json())
+                .then(data => {
+                    if (data.success) {
+                        const elementSelect = document.getElementById('updateAttrElementSelect');
+                        elementSelect.innerHTML = '<option value="">-- Select parent element --</option>';
+                        
+                        data.elements.forEach(elem => {
+                            const option = document.createElement('option');
+                            option.value = elem.element_id;
+                            option.textContent = `${elem.name} (ID: ${elem.element_id})`;
+                            elementSelect.appendChild(option);
+                        });
+                    }
+                })
+                .catch(err => {
+                    console.error('Error loading elements:', err);
+                    showNotification('updateAttrNotification', 'Error loading elements: ' + err, 'error');
+                });
+        });
+
+        // Load attributes when element changes
+        document.getElementById('updateAttrElementSelect').addEventListener('change', function() {
+            const elementId = this.value;
+            const attrSelect = document.getElementById('updateAttrSelect');
+            
+            if (!elementId) {
+                attrSelect.innerHTML = '<option value="">-- Select attribute to update --</option>';
+                return;
+            }
+            
+            const database = updateAttrDbSelect.value;
+            fetch(`/api/attributes/all/${encodeURIComponent(database)}?element_id=${elementId}`)
+                .then(r => r.json())
+                .then(data => {
+                    if (data.success) {
+                        attrSelect.innerHTML = '<option value="">-- Select attribute to update --</option>';
+                        
+                        data.attributes.forEach(attr => {
+                            const option = document.createElement('option');
+                            option.value = attr.attribute_id;
+                            option.textContent = `${attr.name} (ID: ${attr.attribute_id})`;
+                            attrSelect.appendChild(option);
+                        });
+                    }
+                })
+                .catch(err => {
+                    console.error('Error loading attributes:', err);
+                    showNotification('updateAttrNotification', 'Error loading attributes: ' + err, 'error');
+                });
+        });
+
+        // Show/hide formula options based on whether formula is provided
+        document.getElementById('updateAttrFormula').addEventListener('input', function() {
+            const hasFormula = this.value.trim().length > 0;
+            document.getElementById('formulaOptions').style.display = hasFormula ? 'block' : 'none';
+            document.getElementById('triggerOptions').style.display = hasFormula ? 'block' : 'none';
+        });
+
+        // Update Attribute form submission
+        updateAttributeForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const database = updateAttrDbSelect.value;
+            const attributeId = document.getElementById('updateAttrSelect').value;
+            const formula = document.getElementById('updateAttrFormula').value.trim();
+            const name = document.getElementById('updateAttrName').value.trim();
+            const kks = document.getElementById('updateAttrKks').value.trim();
+            const recompute = document.getElementById('updateAttrRecompute').checked;
+            const recreateTrigger = document.getElementById('updateAttrTrigger').checked;
+            
+            if (!database) {
+                showNotification('updateAttrNotification', 'Please select a database', 'error');
+                return;
+            }
+            
+            if (!attributeId) {
+                showNotification('updateAttrNotification', 'Please select an attribute to update', 'error');
+                return;
+            }
+            
+            // At least one field must be provided
+            if (!name && !kks && !formula) {
+                showNotification('updateAttrNotification', 'Please provide at least one field to update (name, KKS, or formula)', 'error');
+                return;
+            }
+
+            const updateData = {
+                recompute_archive: recompute,
+                recreate_trigger: recreateTrigger
+            };
+            
+            if (name) updateData.name = name;
+            if (kks) updateData.kks = kks;
+            if (formula) updateData.formula = formula;
+
+            const payload = {
+                database: database,
+                attribute_id: parseInt(attributeId),
+                update_data: updateData
+            };
+
+            const updateLoading = document.getElementById('updateAttrLoading');
+            updateLoading.style.display = 'block';
+
+            fetch('/api/attribute/update', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            })
+            .then(r => r.json())
+            .then(data => {
+                updateLoading.style.display = 'none';
+
+                if (data.success) {
+                    showNotification('updateAttrNotification', data.message, 'success');
+                    updateAttributeForm.reset();
+                    document.getElementById('formulaOptions').style.display = 'none';
+                    document.getElementById('triggerOptions').style.display = 'none';
+                } else {
+                    showNotification('updateAttrNotification', 'Error: ' + data.error, 'error');
+                }
+            })
+            .catch(err => {
+                updateLoading.style.display = 'none';
+                console.error('Update request failed', err);
+                showNotification('updateAttrNotification', 'Error: ' + err, 'error');
+            });
+        });
+
+        // Update cache form submission
+        updateCacheForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const database = updateDbSelect.value;
+            
+            if (!database) {
+                showMessage('Please select a database', 'error');
+                return;
+            }
+
+            const updateLoading = document.getElementById('updateLoading');
+            const resultDiv = document.getElementById('updateCacheResult');
+            updateLoading.style.display = 'block';
+            resultDiv.style.display = 'none';
+            messageDiv.style.display = 'none';
+
+            fetch(`/api/update-cache/${database}`, {
+                method: 'POST'
+            })
+            .then(r => r.json())
+            .then(data => {
+                updateLoading.style.display = 'none';
+
+                if (data.success) {
+                    showNotification('updateNotification', data.message, 'success');
+                    
+                    // Show detailed results
+                    resultDiv.innerHTML = `
+                        <h3 style="color: #28a745; margin-bottom: 10px;">✓ Cache Updated Successfully</h3>
+                        <p><strong>Attribute mapping file:</strong><br/><code>${data.result.attribute_mapping}</code></p>
+                        <p><strong>Element mapping file:</strong><br/><code>${data.result.webids_mapping}</code></p>
+                        <p><strong>Statistics:</strong></p>
+                        <ul style="margin-left: 20px;">
+                            <li>Attributes: ${data.result.attribute_count}</li>
+                            <li>Elements: ${data.result.element_count}</li>
+                        </ul>
+                    `;
+                    resultDiv.style.display = 'block';
+                } else {
+                    showNotification('updateNotification', 'Error: ' + data.error, 'error');
+                }
+            })
+            .catch(err => {
+                updateLoading.style.display = 'none';
+                showNotification('updateNotification', 'Error: ' + err, 'error');
+            });
+        });
+
+        function showMessage(msg, type) {
+            messageDiv.textContent = msg;
+            messageDiv.className = `message ${type}`;
+            messageDiv.style.display = 'block';
+            if (type === 'success') setTimeout(() => messageDiv.style.display = 'none', 5000);
+        }
+
+        function showNotification(elementId, msg, type) {
+            const notificationDiv = document.getElementById(elementId);
+            notificationDiv.textContent = msg;
+            notificationDiv.className = `notification ${type}`;
+            notificationDiv.style.display = 'block';
+            
+            // Auto-hide success notifications after 5 seconds
+            if (type === 'success') {
+                setTimeout(() => notificationDiv.style.display = 'none', 5000);
+            }
+        }
+
+        // Lookup Mode - Type Switching
+        document.querySelectorAll('input[name="lookupType"]').forEach(radio => {
+            radio.addEventListener('change', function() {
+                const elementFields = document.getElementById('elementLookupFields');
+                const attributeFields = document.getElementById('attributeLookupFields');
+                
+                if (this.value === 'element') {
+                    elementFields.style.display = 'block';
+                    attributeFields.style.display = 'none';
+                    document.getElementById('lookupElementName').required = true;
+                    document.getElementById('lookupAttributeName').required = false;
+                } else {
+                    elementFields.style.display = 'none';
+                    attributeFields.style.display = 'block';
+                    document.getElementById('lookupElementName').required = false;
+                    document.getElementById('lookupAttributeName').required = true;
+                }
+            });
+        });
+
+        // Populate parent element dropdown for attribute lookup
+        lookupDbSelect.addEventListener('change', function() {
+            if (this.value && document.querySelector('input[name="lookupType"]:checked').value === 'attribute') {
+                const database = this.value;
+                fetch(`/api/elements/all/${database}`)
+                    .then(r => r.json())
+                    .then(data => {
+                        const select = document.getElementById('lookupParentElement');
+                        select.innerHTML = '<option value="">-- Any element --</option>';
+                        if (data.success) {
+                            data.elements.forEach(elem => {
+                                const opt = document.createElement('option');
+                                opt.value = elem.element_id;
+                                opt.textContent = elem.name;
+                                select.appendChild(opt);
+                            });
+                        }
+                    });
+            }
+        });
+
+        // Lookup Form Submit
+        lookupForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const database = document.getElementById('lookupDatabase').value;
+            const lookupType = document.querySelector('input[name="lookupType"]:checked').value;
+            
+            let name = '';
+            if (lookupType === 'element') {
+                name = document.getElementById('lookupElementName').value;
+            } else {
+                name = document.getElementById('lookupAttributeName').value;
+            }
+            
+            if (!database || !name) {
+                showNotification('lookupNotification', 'Please fill in all required fields', 'error');
+                return;
+            }
+            
+            const lookupLoading = document.getElementById('lookupLoading');
+            const lookupData = {
+                database: database,
+                type: lookupType,
+                name: name
+            };
+            
+            if (lookupType === 'attribute') {
+                const elementId = document.getElementById('lookupParentElement').value;
+                if (elementId) {
+                    lookupData.element_id = parseInt(elementId);
+                }
+            }
+            
+            lookupLoading.style.display = 'block';
+            
+            fetch('/api/lookup', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(lookupData)
+            })
+            .then(r => r.json())
+            .then(data => {
+                lookupLoading.style.display = 'none';
+                
+                if (data.success) {
+                    const resultsDiv = document.getElementById('lookupResults');
+                    const tableBody = document.getElementById('resultsTableBody');
+                    const resultCount = document.getElementById('resultCount');
+                    
+                    resultCount.textContent = data.count;
+                    tableBody.innerHTML = '';
+                    
+                    if (data.count > 0) {
+                        data.results.forEach(result => {
+                            const row = tableBody.insertRow();
+                            
+                            if (lookupType === 'element') {
+                                row.innerHTML = `
+                                    <td style="padding: 12px; border-bottom: 1px solid #eee;">${result.element_id}</td>
+                                    <td style="padding: 12px; border-bottom: 1px solid #eee;"><strong>${result.name}</strong></td>
+                                    <td style="padding: 12px; border-bottom: 1px solid #eee;">Level: ${result.level}, Parent: ${result.parent_id || 'None'}</td>
+                                `;
+                            } else {
+                                row.innerHTML = `
+                                    <td style="padding: 12px; border-bottom: 1px solid #eee;">${result.attribute_id}</td>
+                                    <td style="padding: 12px; border-bottom: 1px solid #eee;"><strong>${result.name}</strong></td>
+                                    <td style="padding: 12px; border-bottom: 1px solid #eee;">Element: ${result.element_name}, KKS: ${result.kks || 'N/A'}</td>
+                                `;
+                            }
+                        });
+                        resultsDiv.style.display = 'block';
+                        showNotification('lookupNotification', `Found ${data.count} result${data.count > 1 ? 's' : ''}`, 'success');
+                    } else {
+                        resultsDiv.style.display = 'none';
+                        showNotification('lookupNotification', 'No results found', 'error');
+                    }
+                } else {
+                    showNotification('lookupNotification', 'Error: ' + data.error, 'error');
+                }
+            })
+            .catch(err => {
+                lookupLoading.style.display = 'none';
+                showNotification('lookupNotification', 'Error: ' + err, 'error');
+            });
+        });
+    </script>
+</body>
+</html>
+

@@ -1,0 +1,87 @@
+{% include 'top.html' %}
+
+<div id="content" class="container my-4">
+  <h1>Export table data</h1>
+
+  <p class="text-muted">
+    Choose a table and optionally apply a time range filter or an exact search on
+    a single column. The result will be downloaded as a CSV file.
+  </p>
+
+  <form class="needs-validation" method="POST" action="{{ url_for('export_table') }}">
+    <div class="form-group mb-3">
+      <label for="table_name">Table</label>
+      <select class="form-control" id="table_name" name="table_name" required>
+        <option value="">-- Select a table --</option>
+        {% for t in tables %}
+        <option value="{{ t }}">{{ t }}</option>
+        {% endfor %}
+      </select>
+      <div class="invalid-feedback">Please select a table.</div>
+    </div>
+
+    <div class="form-group mb-3">
+      <label for="filter_type">Filter type</label>
+      <select class="form-control" id="filter_type" name="filter_type">
+        <option value="none">No filter (export all rows)</option>
+        <option value="time_range">Time range (BETWEEN)</option>
+        <option value="exact">Exact match (=)</option>
+      </select>
+    </div>
+
+    <div class="form-group mb-3">
+      <label for="attribute">Column name</label>
+      <input
+        type="text"
+        class="form-control"
+        id="attribute"
+        name="attribute"
+        placeholder="e.g. created_at, updated_at, userid"
+      />
+      <small class="form-text text-muted">
+        Required for both time range and exact match filters. Must be a valid column
+        in the selected table.
+      </small>
+    </div>
+
+    <div class="form-row mb-3">
+      <div class="form-group col-md-6">
+        <label for="start">Start (for time range)</label>
+        <input
+          type="text"
+          class="form-control"
+          id="start"
+          name="start"
+          placeholder="e.g. 2025-01-01 00:00:00"
+        />
+      </div>
+      <div class="form-group col-md-6">
+        <label for="end">End (for time range)</label>
+        <input
+          type="text"
+          class="form-control"
+          id="end"
+          name="end"
+          placeholder="e.g. 2025-12-31 23:59:59"
+        />
+      </div>
+    </div>
+
+    <div class="form-group mb-4">
+      <label for="exact">Exact match value</label>
+      <input
+        type="text"
+        class="form-control"
+        id="exact"
+        name="exact"
+        placeholder="Value for exact match filter"
+      />
+    </div>
+
+    <button type="submit" class="btn btn-primary">Export as CSV</button>
+    <a href="{{ url_for('index') }}" class="btn btn-secondary">Back to home</a>
+  </form>
+</div>
+
+{% include 'end.html' %}
+
